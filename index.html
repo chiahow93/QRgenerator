@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Restaurant QR Code Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #FF9838;
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .settings-panel {
+            background: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .setting-item {
+            margin-bottom: 20px;
+        }
+
+        .setting-item label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .setting-item label span {
+            color: #7f8c8d;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        .setting-item input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dcdfe6;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .setting-item input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 152, 56, 0.2);
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .upload-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .upload-button:hover {
+            background-color: #ff8921;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 152, 56, 0.3);
+        }
+
+        .preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 40px;
+            margin-top: 30px;
+            padding: 20px;
+        }
+
+        .preview-item {
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+
+        .preview-canvas {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        .download-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .download-btn:hover {
+            background-color: #45a049;
+        }
+
+        .download-all-btn {
+            background-color: #2196F3;
+            margin-top: 20px;
+        }
+
+        .hint-text {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* 添加响应式布局 */
+        @media (max-width: 1200px) {
+            .preview-container {
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+                gap: 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .preview-container {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Restaurant QR Code Generator</h1>
+    </div>
+
+    <div class="settings-panel">
+        <div class="settings-grid">
+            <div class="setting-item">
+                <label>
+                    Restaurant Name:
+                    <span>Enter your restaurant name</span>
+                </label>
+                <input type="text" id="companyName" value="3FS TECHNOLOGY SDN BHD">
+            </div>
+            <div class="setting-item">
+                <label>
+                    Company Name Font Size (px):
+                    <span>Recommended: 20-80px</span>
+                </label>
+                <input type="number" id="companyFontSize" value="38" min="20" max="80">
+            </div>
+            <div class="setting-item">
+                <label>
+                    Table Number Font Size (px):
+                    <span>Recommended: 60-200px</span>
+                </label>
+                <input type="number" id="tableFontSize" value="140" min="60" max="200">
+            </div>
+            <div class="setting-item">
+                <label>
+                    QR Code Size (px):
+                    <span>Recommended: 200-400px</span>
+                </label>
+                <input type="number" id="qrCodeSize" value="300" min="200" max="400" step="10">
+            </div>
+        </div>
+    </div>
+
+    <div class="upload-section">
+        <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+        <button class="upload-button" onclick="document.getElementById('fileInput').click()">
+            Upload QR Codes
+        </button>
+        <p class="hint-text">Select multiple QR code images to generate templates</p>
+        <button id="downloadAllBtn" class="upload-button download-all-btn" style="display: none;">
+            Download All
+        </button>
+    </div>
+
+    <div class="preview-container" id="previewContainer"></div>
+
+    <script>
+        let generatedCanvases = new Map();
+        let currentQRImages = new Map();
+        const previewContainer = document.getElementById('previewContainer');
+
+        // 绘制模板函数
+        function drawTemplate(ctx, width, height, tableNumber, settings) {
+            // 设置圆角矩形背景
+            ctx.fillStyle = '#FFFFFF';
+            roundRect(ctx, 0, 0, width, height, 30);
+            ctx.fill();
+
+            // 顶部橙色区域（渐变）
+            const gradient = ctx.createLinearGradient(0, 0, width, 0);
+            gradient.addColorStop(0, '#FF9838');
+            gradient.addColorStop(1, '#FFB777');
+            ctx.fillStyle = gradient;
+            roundRect(ctx, 0, 0, width, height * 0.6, 30);
+            ctx.fill();
+
+            // 添加公司名称
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `bold ${settings.companyFontSize}px Arial`;
+            ctx.textAlign = 'center';
+            const lines = getLines(ctx, settings.companyName, width - 60);
+            let y = 80;
+            lines.forEach((line, index) => {
+                ctx.fillText(line, width/2, y + (index * (parseInt(settings.companyFontSize) * 1.2)));
+            });
+
+            // 添加 TABLE 文字
+            ctx.font = 'bold 50px Arial';
+            ctx.fillStyle = '#333333';
+            ctx.fillText('TABLE', width/2, height - 240);
+
+            // 添加桌号
+            ctx.font = `bold ${settings.tableFontSize}px Arial`;
+            ctx.fillStyle = '#333333';
+            ctx.fillText(tableNumber, width/2, height - 130);
+
+            // 添加 MENU 文字
+            const menuGradient = ctx.createLinearGradient(width/2 - 100, 0, width/2 + 100, 0);
+            menuGradient.addColorStop(0, '#FF9838');
+            menuGradient.addColorStop(1, '#FFB777');
+            ctx.fillStyle = menuGradient;
+            ctx.font = 'bold 64px Arial';
+            ctx.fillText('MENU', width/2, height - 60);
+
+            // Scan me 文字
+            ctx.font = '28px Arial';
+            ctx.fillStyle = '#999999';
+            ctx.fillText('Scan me to order', width/2, height - 20);
+        }
+
+        // 辅助函数：文本换行
+        function getLines(ctx, text, maxWidth) {
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = words[0];
+
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                const width = ctx.measureText(currentLine + " " + word).width;
+                if (width < maxWidth) {
+                    currentLine += " " + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        }
+
+        // 辅助函数：绘制圆角矩形
+        function roundRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        // 更新所有预览
+        function updateAllPreviews() {
+            previewContainer.innerHTML = '';
+            currentQRImages.forEach((imageUrl, filename) => {
+                createPreview(imageUrl, filename);
+            });
+        }
+
+        // 创建预览
+        function createPreview(imageUrl, filename) {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 600;
+            canvas.height = 900;
+            canvas.className = 'preview-canvas';
+            
+            const ctx = canvas.getContext('2d');
+            
+            const settings = {
+                companyName: document.getElementById('companyName').value,
+                companyFontSize: document.getElementById('companyFontSize').value,
+                tableFontSize: document.getElementById('tableFontSize').value,
+                qrCodeSize: document.getElementById('qrCodeSize').value
+            };
+            
+            const tableNumber = filename.replace(/\.[^/.]+$/, "");
+            
+            // 先绘制模板
+            drawTemplate(ctx, canvas.width, canvas.height, tableNumber, settings);
+            
+            // 加载并绘制二维码图片
+            const img = new Image();
+            img.onload = function() {
+                const qrSize = parseInt(settings.qrCodeSize);
+                const x = (canvas.width - qrSize) / 2;
+                const y = canvas.height * 0.15;
+                
+                // 先绘制二维码的白色背景和阴影
+                ctx.save();
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 5;
+                
+                ctx.fillStyle = '#FFFFFF';
+                roundRect(ctx, x - 20, y - 20, qrSize + 40, qrSize + 40, 15);
+                ctx.fill();
+                
+                // 重置阴影后绘制二维码
+                ctx.restore();
+                ctx.drawImage(img, x, y, qrSize, qrSize);
+                
+                generatedCanvases.set(filename, canvas);
+            };
+            
+            img.onerror = function(e) {
+                console.error('图片加载失败:', e);
+            };
+            
+            img.src = imageUrl;
+            
+            previewItem.appendChild(canvas);
+            previewContainer.appendChild(previewItem);
+        }
+
+        // 设置监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 监听设置变化
+            ['companyName', 'companyFontSize', 'tableFontSize', 'qrCodeSize'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateAllPreviews);
+            });
+
+            // 文件上传监听
+            document.getElementById('fileInput').addEventListener('change', function(event) {
+                const files = event.target.files;
+                if (files.length === 0) return;
+
+                previewContainer.innerHTML = '';
+                currentQRImages.clear();
+                document.getElementById('downloadAllBtn').style.display = 'inline-block';
+
+                Array.from(files).forEach(file => {
+                    if (!file.type.startsWith('image/')) {
+                        console.error('不支持的文件类型:', file.type);
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const imageUrl = e.target.result;
+                        currentQRImages.set(file.name, imageUrl);
+                        createPreview(imageUrl, file.name);
+                    };
+                    
+                    reader.onerror = function(e) {
+                        console.error('文件读取错误:', e);
+                    };
+                    
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            // 批量下载按钮
+            document.getElementById('downloadAllBtn').onclick = async function() {
+                const zip = new JSZip();
+                generatedCanvases.forEach((canvas, filename) => {
+                    const imageData = canvas.toDataURL('image/png').split(',')[1];
+                    zip.file(`table_${filename}`, imageData, {base64: true});
+                });
+                const content = await zip.generateAsync({type: 'blob'});
+                const link = document.createElement('a');
+                link.download = 'table_qrcodes.zip';
+                link.href = URL.createObjectURL(content);
+                link.click();
+            };
+        });
+    </script>
+</body>
+</html>
